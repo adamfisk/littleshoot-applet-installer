@@ -9,6 +9,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.zip.GZIPInputStream;
 
+import org.xeustechnologies.jtar.TarInputStream;
+
 //import netscape.javascript.JSObject;
 
 /**
@@ -33,6 +35,7 @@ public class Installer extends Applet {
         HttpURLConnection connection = null;
         URL serverAddress = null;
         InputStream is = null;
+        InputStream tis = null;
         InputStream gis = null;
         try {
             serverAddress = new URL("http://cdn.bravenewsoftware.org/"+installerName);
@@ -45,7 +48,8 @@ public class Installer extends Applet {
                       
             connection.connect();
             is = connection.getInputStream();
-            gis = new GZIPInputStream(is);
+            tis = new TarInputStream(is);
+            gis = new GZIPInputStream(tis);
             copyLarge(gis, os);
             
             System.out.println("Opening Lantern");
@@ -73,6 +77,13 @@ public class Installer extends Applet {
                     e.printStackTrace();
                 }
             }
+            if (tis != null) {
+                try {
+                    tis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             if (os != null) {
                 try {
                     os.close();
@@ -96,7 +107,7 @@ public class Installer extends Applet {
             return "installer.exe";
         }
         else if (getOSMatches("Mac OS X")) {
-            return "lantern.app";
+            return "lantern-osx-installer.tgz";
         }
         return "installer.exe";
     }
