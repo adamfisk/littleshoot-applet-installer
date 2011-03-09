@@ -1,0 +1,30 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en-US">
+  <head>
+    <title>LittleShoot Installer Demo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  </head>
+  <body>
+    <noscript>A browser with JavaScript enabled is required for this page to operate properly.</noscript>
+    <h1>LittleShoot Installer Demo</h1>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script src="http://www.java.com/js/deployJava.js"></script>
+    <script>
+        var attributes = { code:'Installer.class', archive:'littleShootInstaller.jar',  width:3, height:3, id:'littleShootInstaller'} ;
+        var parameters = {jnlp_href: 'littleShootInstaller.jnlp'} ;
+        deployJava.runApplet(attributes, parameters, '1.5');
+        //applet_fu.run(attributes, parameters, '1.5');
+    </script>
+
+    <script language="JavaScript">
+    //function install() {
+        try {
+            var installerApplet = $("#littleShootInstaller")[0];
+            installerApplet.install();
+        } catch (error) {
+        }
+    //}
+
+    </script>
+  </body>
+</html>

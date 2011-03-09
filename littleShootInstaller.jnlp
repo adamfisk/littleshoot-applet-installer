@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jnlp spec="1.0+" codebase="" href="">
+    <information>
+        <title>Littleshoot Installer</title>
+        <vendor>Brave New Software Project, Inc.</vendor>
+    </information>
+    <resources>
+        <!-- Application Resources -->
+        <j2se version="1.5+"
+              href="http://java.sun.com/products/autodl/j2se" />
+        <jar href="littleShootInstaller.jar" main="true" />
+
+    </resources>
+    <applet-desc 
+         name="LittleShoot Installer Applet"
+         main-class="Installer"
+         width="2"
+         height="2">
+     </applet-desc>
+     <update check="background"/>
+</jnlp>	
