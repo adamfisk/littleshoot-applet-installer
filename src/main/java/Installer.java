@@ -1,15 +1,19 @@
 import java.applet.Applet;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.zip.GZIPInputStream;
-
-import org.xeustechnologies.jtar.TarInputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 //import netscape.javascript.JSObject;
 
@@ -21,93 +25,134 @@ public class Installer extends Applet {
 
     private static final long serialVersionUID = -3141611634409357059L;
     
+    private static final boolean IS_OS_MAC_OSX = getOSMatches("Mac OS X");
+    private static final boolean IS_OS_WINDOWS = getOSMatches("Windows");
+    
     public void install() {
         System.out.println("Install called...");
-        final File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+
+            public Void run() {
+                System.out.println("Inside privileged call...");
+                try {
+                    final File tempFile = installPrivileged();
+                    System.out.println("Opening Lantern");
+                    final String cmd = cmd(tempFile);
+                    System.out.println("Calling command "+cmd);
+                    Runtime.getRuntime().exec(cmd);
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                return null;
+            }
+        });
+    }
+    
+    public File installPrivileged() throws IOException {
         final String installerName = installerName();
+        final File tempDir = new File(System.getProperty("java.io.tmpdir"));
         final File tempFile = new File(tempDir, installerName);
-        OutputStream os = null;
-        try {
-            os = new FileOutputStream(tempFile);
-        } catch (FileNotFoundException e1) {
-            e1.printStackTrace();
-        }        
+        //final File tempFile = new File("/Users/afisk/lantern/lantern-osx-installer.zip");
+        final String fullUrl = "http://cdn.bravenewsoftware.org/"+installerName;
+        
         HttpURLConnection connection = null;
         URL serverAddress = null;
         InputStream is = null;
-        InputStream tis = null;
-        InputStream gis = null;
+        OutputStream os = null;
         try {
-            serverAddress = new URL("http://cdn.bravenewsoftware.org/"+installerName);
-          
+            serverAddress = new URL(fullUrl);
+            System.out.println("Opening connection...");
             //Set up the initial connection
             connection = (HttpURLConnection)serverAddress.openConnection();
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
             connection.setReadTimeout(30000);
-                      
+            connection.setInstanceFollowRedirects(true);
+            connection.setConnectTimeout(30 * 1000);
+            connection.setUseCaches(false);
             connection.connect();
+            System.out.println("Connected...");
             is = connection.getInputStream();
-            tis = new TarInputStream(is);
-            gis = new GZIPInputStream(tis);
-            copyLarge(gis, os);
             
-            System.out.println("Opening Lantern");
-            final String cmd = "open "+tempFile.getAbsolutePath();
-            System.out.println("Calling command "+cmd);
-            Runtime.getRuntime().exec(cmd);
-            //Thread.sleep(10 * 1000);
+            os = new FileOutputStream(tempFile);
+            System.out.println("Copying url: "+fullUrl);
+            copyLarge(is, os);
+            os.close();
+            is.close();
+            System.out.println("Wrote file to: "+tempFile);
+            final ZipFile zip = new ZipFile(tempFile, ZipFile.OPEN_READ);
+            final Enumeration<? extends ZipEntry> entries = zip.entries();
+            File firstFile = null;
+            while (entries.hasMoreElements()) {
+                final ZipEntry entry = entries.nextElement();
+                final String name = entry.getName();
+                final File file = new File(name);
+                if (firstFile == null) {
+                    firstFile = file;
+                }
+                if (entry.isDirectory()) {
+                    if (!file.mkdirs()) {
+                        System.out.println("ERROR making directory: "+name);
+                    }
+                }
+                else {
+                    BufferedOutputStream dest = null;
+                    BufferedInputStream bis = null;
+                    try {
+                        dest = new BufferedOutputStream(
+                            new FileOutputStream(name), 2048);
+                        bis = new BufferedInputStream(zip.getInputStream(entry));
+                        copyLarge(bis, dest);
+                        bis.close();
+                        dest.flush();
+                        dest.close();
+                    } catch (final IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        closeQuietly(dest, bis);
+                    }
+                }
+            }
+            return firstFile;
         } catch (final IOException e) {
             e.printStackTrace();
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (gis != null) {
-                try {
-                    gis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (tis != null) {
-                try {
-                    tis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            closeQuietly(is, os);
         }
-        /*
-        try {
-            Runtime.getRuntime().exec("open /Applications/Calculator.app");
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        */
+        
+        throw new IOException("Did not successfully unzip the file.");
     }
     
-    private String installerName() {
-        if (getOSMatches("Windows")) {
-            return "installer.exe";
+    private void closeQuietly(final Closeable... closeables) {
+        for (final Closeable c : closeables) {
+            try {
+                c.close();
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
         }
-        else if (getOSMatches("Mac OS X")) {
-            return "lantern-osx-installer.tgz";
+    }
+    
+    protected String cmd(final File tempFile) throws IOException {
+        if (IS_OS_MAC_OSX) {
+            return "open "+tempFile.getAbsolutePath();
+        } else if (IS_OS_WINDOWS) {
+            return tempFile.getAbsolutePath();
+        } else {
+            throw new IOException("Unsupported OS");
+        }
+        
+    }
+    
+    protected String installerName() {
+        if (IS_OS_MAC_OSX) {
+            return "lantern-osx-installer.zip";
+        } else if (IS_OS_WINDOWS) {
+            //return "installer.exe";
+            return "lantern-win-installer.zip";
         }
         return "installer.exe";
     }
