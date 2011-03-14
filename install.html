@@ -3,28 +3,92 @@
   <head>
     <title>LittleShoot Installer Demo</title>
     <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <link type="text/css" href="css/cupertino/jquery-ui-1.8.10.custom.css" rel="Stylesheet" />
   </head>
   <body>
     <noscript>A browser with JavaScript enabled is required for this page to operate properly.</noscript>
-    <h1>LittleShoot Installer Demo</h1>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <!-- 
+    <center>
+        <h2 class="demoHeaders">Click the Button Below to Install Lantern</h2>
+        <br>
+        <p><a href="#" id="dialog_link" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>Install Lantern!</a></p>
+    </center>
+     -->
+     
+	<div class="demo">
+		<div id="dialog" title="Lantern Install">
+		    <div id="installStatus"></div>
+		    <br>
+		    <div id="progressbar"></div>
+		</div>
+		<!-- 
+		<div id="install" style="width: 600px; height: 400px;">
+		</div>
+		 -->
+	</div>
+	
+	   
+	<!-- 
     <script src="http://www.java.com/js/deployJava.js"></script>
-    <script>
-        var attributes = { code:'Installer.class', archive:'littleShootInstaller.jar',  width:3, height:3, id:'littleShootInstaller'} ;
+    <script type="text/javascript">
+        var attributes = { id:'installerApplet', code:'Installer.class', archive:'littleShootInstaller.jar',  width:3, height:3, id:'littleShootInstaller'} ;
         var parameters = {jnlp_href: 'littleShootInstaller.jnlp'} ;
-        deployJava.runApplet(attributes, parameters, '1.5');
-        //applet_fu.run(attributes, parameters, '1.5');
+        //deployJava.runApplet(attributes, parameters, '1.5');
+    </script>
+     -->
+     
+    <script src="js/CommonUtils.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script src="js/jquery-ui-1.8.10.custom.min.js"></script>
+    
+    <script type="text/javascript">
+        CommonUtils.loadLittleShootApplet();
     </script>
 
-    <script language="JavaScript">
-    //function install() {
-        try {
-            var installerApplet = $("#littleShootInstaller")[0];
-            installerApplet.install();
-        } catch (error) {
-        }
-    //}
+<!-- 
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var updateInstallData = function () {
+                
+                var installerApplet = $("#littleShootInstaller")[0];
+                //var installerApplet = $("#littleShootInstaller");
+                if (installerApplet) {
+	                var downloaded = installerApplet.getDownloaded();
+	                var percent = installerApplet.getPercentComplete();
+	                var status = installerApplet.getStatus();
+	                //alert("Percent: "+percent);
+	                //alert("Status "+status);
+	                //console.info("Downloaded: "+downloaded);
+	                //console.info("Status: "+status);
+	                $( "#progressbar" ).progressbar({
+	                    value: percent
+	                    });
+	                $("#installStatus").html(status);
+	            } else {
+	            	alert("Could not find applet?");
+	            }
+           
+            }
+            try {
+                var installerApplet = $("#littleShootInstaller")[0];
+                installerApplet.install(
+                    "http://cdn.bravenewsoftware.org/lantern-osx-installer-0.31.zip", 
+                    "lantern-osx-installer.app");
+            } catch (error) {
+            }
+            setInterval(updateInstallData, 3000);
+            $("#progressbar").progressbar({
+                value: 0
+            });
+            $("#dialog").dialog();
+            
+            //$("#installStatus").html("Loading Installer");
+        });
+        
 
+        
     </script>
+ -->
+
   </body>
 </html>
