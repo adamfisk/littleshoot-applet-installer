@@ -8,11 +8,10 @@ public class InstallerTest {
 
     public void testLocal() throws Exception {
         final Installer i = new Installer();
-        i.install();
+        //i.install();
         //new File(System.getProperty("java.io.tmpdir");
     }
     
-    @Test
     public void testUnzip() throws Exception {
         final Installer i = new Installer();
         final File zipped = new File("lantern-osx-installer.zip");
